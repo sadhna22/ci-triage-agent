@@ -1,0 +1,17 @@
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+*.egg-info/
+
+# Chroma persistent index (rebuilt from rag/corpus/)
+.chroma/
+rag/.chroma/
+
+# pytest / reports
+.pytest_cache/
+*.junit.xml
+eval/failures/live.xml
+triage-report.json

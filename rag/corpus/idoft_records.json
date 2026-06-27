@@ -1,0 +1,122 @@
+[
+  {
+    "id": "IDOFT-001",
+    "_source": "IDoFT py-data.csv",
+    "signature": "AssertionError @ nikamap/tests/test_nikamap.py::test_nikamap_write — passes first run, fails on re-run in same process; output file state not reset (non-idempotent)",
+    "verdict": "FLAKY",
+    "root_cause": "NIO: Non-idempotent-outcome — test mutates shared state and fails when re-run",
+    "owner": "proj-abeelen-nikamap",
+    "date": "2025-09-02",
+    "fix_ref": "IDoFT PR https://github.com/abeelen/nikamap/pull/2 (Opened)"
+  },
+  {
+    "id": "IDOFT-002",
+    "_source": "IDoFT py-data.csv",
+    "signature": "AssertionError @ tests/common/test_utils.py::test_new_socket_connection_ipv4 — victim test polluted by socket/global state left by an earlier test",
+    "verdict": "FLAKY",
+    "root_cause": "OD-Vic: Order-dependent victim — fails when a prior test leaves shared state",
+    "owner": "proj-abhinavsingh-proxy.py",
+    "date": "2025-09-04",
+    "fix_ref": "IDoFT (no PR)"
+  },
+  {
+    "id": "IDOFT-003",
+    "_source": "IDoFT py-data.csv",
+    "signature": "AssertionError @ tests/unit/test_meta_for_old_files.py::test_fix_old_data_2 — non-idempotent, mutates fixture data so re-run in same process fails",
+    "verdict": "FLAKY",
+    "root_cause": "NIO: Non-idempotent-outcome",
+    "owner": "proj-actris-cloudnet-cloudnetpy",
+    "date": "2025-09-08",
+    "fix_ref": "IDoFT PR https://github.com/actris-cloudnet/cloudnetpy/pull/34 (Open)"
+  },
+  {
+    "id": "IDOFT-004",
+    "_source": "IDoFT py-data.csv",
+    "signature": "AssertionError @ tests/unit/test_util.py::test_l2_norm — non-idempotent numerical accumulator not reset between runs",
+    "verdict": "FLAKY",
+    "root_cause": "NIO: Non-idempotent-outcome",
+    "owner": "proj-actris-cloudnet-cloudnetpy",
+    "date": "2025-09-08",
+    "fix_ref": "IDoFT PR https://github.com/actris-cloudnet/cloudnetpy/pull/35 (Open)"
+  },
+  {
+    "id": "IDOFT-005",
+    "_source": "IDoFT py-data.csv",
+    "signature": "AssertionError @ tests/test_prepareDeploymentServiceDefinitionStep.py::test_process_application_autoscaling_scalable_target_max_capacity_invalid — brittle, depends on setup from an earlier test that did not run",
+    "verdict": "FLAKY",
+    "root_cause": "OD-Brit: Order-dependent brittle — depends on an earlier test's setup",
+    "owner": "proj-AdventielFr-ecs-crd-cli",
+    "date": "2025-09-11",
+    "fix_ref": "IDoFT (Unmaintained)"
+  },
+  {
+    "id": "IDOFT-006",
+    "_source": "IDoFT py-data.csv",
+    "signature": "AssertionError @ test/test_handlers.py::test_handler_register_class_pass — victim test polluted by a registry mutated by an earlier test",
+    "verdict": "FLAKY",
+    "root_cause": "OD-Vic: Order-dependent victim",
+    "owner": "proj-agile4you-bottle-neck",
+    "date": "2025-09-12",
+    "fix_ref": "IDoFT (Unmaintained)"
+  },
+  {
+    "id": "IDOFT-007",
+    "_source": "IDoFT py-data.csv",
+    "signature": "AssertionError @ test/test_routing.py::test_router_mount_pass — order-dependent, passes in isolation but fails under certain test orders",
+    "verdict": "FLAKY",
+    "root_cause": "OD: Order-dependent — shared router state across tests",
+    "owner": "proj-agile4you-bottle-neck",
+    "date": "2025-09-12",
+    "fix_ref": "IDoFT PR https://github.com/agile4you/bottle-neck/pull/4 (Opened)"
+  },
+  {
+    "id": "IDOFT-008",
+    "_source": "IDoFT py-data.csv",
+    "signature": "AssertionError @ test/test_routing.py::test_router_register_handler_fn_pass — non-idempotent handler registration fails on re-run",
+    "verdict": "FLAKY",
+    "root_cause": "NIO: Non-idempotent-outcome",
+    "owner": "proj-agile4you-bottle-neck",
+    "date": "2025-09-13",
+    "fix_ref": "IDoFT PR https://github.com/agile4you/bottle-neck/pull/3 (Opened)"
+  },
+  {
+    "id": "IDOFT-009",
+    "_source": "IDoFT py-data.csv",
+    "signature": "AssertionError @ test_typeguard.py::test_check_call_args — order-dependent, leaks type-check cache state across tests",
+    "verdict": "FLAKY",
+    "root_cause": "OD: Order-dependent",
+    "owner": "proj-agronholm-typeguard",
+    "date": "2025-09-20",
+    "fix_ref": "IDoFT PR https://github.com/agronholm/typeguard/pull/220 (Opened)"
+  },
+  {
+    "id": "IDOFT-010",
+    "_source": "IDoFT py-data.csv",
+    "signature": "AssertionError @ test_typeguard.py::test_exec_no_namespace — order-dependent on a global namespace populated by a prior test",
+    "verdict": "FLAKY",
+    "root_cause": "OD: Order-dependent",
+    "owner": "proj-agronholm-typeguard",
+    "date": "2025-09-20",
+    "fix_ref": "IDoFT (no PR)"
+  },
+  {
+    "id": "IDOFT-011",
+    "_source": "IDoFT py-data.csv",
+    "signature": "AssertionError @ test_typeguard.py::test_forward_ref_policy_guess — order-dependent forward-ref resolution depends on prior test imports",
+    "verdict": "FLAKY",
+    "root_cause": "OD: Order-dependent",
+    "owner": "proj-agronholm-typeguard",
+    "date": "2025-09-21",
+    "fix_ref": "IDoFT (no PR)"
+  },
+  {
+    "id": "IDOFT-012",
+    "_source": "IDoFT py-data.csv",
+    "signature": "AssertionError @ tests/test_runium.py::TestStartIn::test_processing — non-deterministic, intermittent failure from thread scheduling / timing without code change",
+    "verdict": "FLAKY",
+    "root_cause": "NOD: Non-deterministic — timing/scheduling, no order dependence",
+    "owner": "proj-AGTGreg-runium",
+    "date": "2025-09-25",
+    "fix_ref": "IDoFT (Unmaintained)"
+  }
+]

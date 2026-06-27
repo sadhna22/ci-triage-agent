@@ -1,0 +1,99 @@
+{
+  "_comment": "Recorded tool data for offline demo. Each tool reads from here when API_BASE_URL is unset (fixture mode). With a live Toolshop, the tools call the real API instead. Keys are test_ids matching eval/labels.json. These reproduce the 3 marquee scenarios deterministically.",
+
+  "test_create_product_returns_201": {
+    "details": {
+      "name": "test_create_product_returns_201",
+      "error_type": "AssertionError",
+      "message": "assert 500 == 201  (and response missing required field 'id')",
+      "endpoint": "POST /products",
+      "status": 500,
+      "stack": "suite/test_products.py:24: in test_create_product_returns_201\n    assert resp.status_code == 201\nE   assert 500 == 201",
+      "logs": "POST /products -> 500; body={'error':'NullPointer in ProductResource'}"
+    },
+    "rerun": { "passed": 0, "failed": 5, "errors": ["assert 500 == 201"] },
+    "contract": {
+      "endpoint": "POST /products",
+      "violations": [
+        "response status 500 not in documented {201,422}",
+        "required field 'id' missing from response body"
+      ]
+    },
+    "service_health": { "target": "POST /products", "reachable": true, "detail": "API responds (500 is application-level, not infra)" }
+  },
+
+  "test_related_products_eventually_populated": {
+    "details": {
+      "name": "test_related_products_eventually_populated",
+      "error_type": "TimeoutError",
+      "message": "condition not met within 2s: expected >0 related products, got 0",
+      "endpoint": "GET /products/1/related",
+      "status": 200,
+      "stack": "suite/test_products.py:36: in test_related_products_eventually_populated\n    assert len(resp.json()) > 0\nE   assert 0 > 0",
+      "logs": "GET /products/1/related -> 200 [] (index lag); seeded by prior test"
+    },
+    "rerun": { "passed": 3, "failed": 2, "errors": ["assert 0 > 0", "assert 0 > 0"] },
+    "contract": { "endpoint": "GET /products/1/related", "violations": [] },
+    "service_health": { "target": "GET /products/1/related", "reachable": true, "detail": "API healthy" }
+  },
+
+  "test_list_products_returns_200__env_break": {
+    "details": {
+      "name": "test_list_products_returns_200__env_break",
+      "error_type": "ConnectionError",
+      "message": "HTTPConnectionPool(host='localhost', port=1): Max retries exceeded: Connection refused",
+      "endpoint": "GET /products",
+      "status": null,
+      "stack": "suite/test_products.py:14: in test_list_products_returns_200\n    resp = requests.get(f'{base_url}/products')\nE   requests.exceptions.ConnectionError: Connection refused",
+      "logs": "base_url=http://localhost:1/api (TRIAGE_ENV_BREAK=1) -> connection refused"
+    },
+    "rerun": { "passed": 0, "failed": 5, "errors": ["ConnectionError: Connection refused"] },
+    "contract": { "endpoint": "GET /products", "violations": [] },
+    "service_health": { "target": "GET /products", "reachable": false, "detail": "Connection refused at http://localhost:1/api — dependency unreachable" }
+  },
+
+  "test_checkout_total_rounding": {
+    "details": { "name": "test_checkout_total_rounding", "error_type": "AssertionError", "message": "assert 19.90 == 19.99 (cart total rounding wrong)", "endpoint": "POST /carts", "status": 200, "stack": "suite/test_cart.py:18: assert 19.90 == 19.99", "logs": "POST /carts -> total 19.90 expected 19.99" },
+    "rerun": { "passed": 0, "failed": 5, "errors": ["assert 19.90 == 19.99"] },
+    "contract": { "endpoint": "POST /carts", "violations": ["field 'total' value 19.90 violates expected rounding (HALF_UP) -> 19.99"] },
+    "service_health": { "target": "POST /carts", "reachable": true, "detail": "API responds" }
+  },
+  "test_invoice_total_type": {
+    "details": { "name": "test_invoice_total_type", "error_type": "AssertionError", "message": "expected number for 'total' got string", "endpoint": "GET /invoices/1", "status": 200, "stack": "suite/test_invoice.py:22: assert isinstance(total, (int,float))", "logs": "GET /invoices/1 -> total '12.00' (string)" },
+    "rerun": { "passed": 0, "failed": 5, "errors": ["type mismatch on 'total'"] },
+    "contract": { "endpoint": "GET /invoices/1", "violations": ["field 'total' type string, schema requires number"] },
+    "service_health": { "target": "GET /invoices/1", "reachable": true, "detail": "API responds" }
+  },
+  "test_search_sort_stable": {
+    "details": { "name": "test_search_sort_stable", "error_type": "AssertionError", "message": "expected first result A got B (relevance sort order varies)", "endpoint": "GET /products?sort=relevance", "status": 200, "stack": "suite/test_search.py:30: assert results[0].id == 'A'", "logs": "non-deterministic ordering; differs across runs" },
+    "rerun": { "passed": 2, "failed": 3, "errors": ["order mismatch", "order mismatch", "order mismatch"] },
+    "contract": { "endpoint": "GET /products?sort=relevance", "violations": [] },
+    "service_health": { "target": "GET /products?sort=relevance", "reachable": true, "detail": "API responds" }
+  },
+  "test_orders_count_by_date": {
+    "details": { "name": "test_orders_count_by_date", "error_type": "AssertionError", "message": "expected order count 5 got 4 (date boundary)", "endpoint": "GET /orders", "status": 200, "stack": "suite/test_orders.py:41: assert count == 5", "logs": "count depends on timezone date boundary; differs by runner TZ" },
+    "rerun": { "passed": 3, "failed": 2, "errors": ["count 4 != 5", "count 4 != 5"] },
+    "contract": { "endpoint": "GET /orders", "violations": [] },
+    "service_health": { "target": "GET /orders", "reachable": true, "detail": "API responds" }
+  },
+  "test_products_list_redis": {
+    "details": { "name": "test_products_list_redis", "error_type": "ConnectionError", "message": "Connection refused: redis cache dependency unavailable", "endpoint": "GET /products", "status": null, "stack": "suite/test_products.py:14: ConnectionError redis", "logs": "redis sidecar not started" },
+    "rerun": { "passed": 0, "failed": 5, "errors": ["ConnectionError: redis refused"] },
+    "contract": { "endpoint": "GET /products", "violations": [] },
+    "service_health": { "target": "GET /products", "reachable": false, "detail": "Redis dependency unreachable — connection refused" }
+  },
+  "test_products_list_dns": {
+    "details": { "name": "test_products_list_dns", "error_type": "ConnectionError", "message": "Failed to establish a new connection: Name or service not known", "endpoint": "GET /products", "status": null, "stack": "suite/test_products.py:14: ConnectionError DNS", "logs": "DNS resolution failed for api host in CI" },
+    "rerun": { "passed": 0, "failed": 5, "errors": ["ConnectionError: DNS"] },
+    "contract": { "endpoint": "GET /products", "violations": [] },
+    "service_health": { "target": "GET /products", "reachable": false, "detail": "DNS resolution failed — host unreachable" }
+  },
+
+  "test_categories_parent_id_is_integer": {
+    "_note": "Live demo against the real with-bugs API. With API_BASE_URL set, check_contract hits api-with-bugs.practicesoftwaretesting.com and validates /categories against the live OpenAPI spec. Offline, it replays the recorded violation below.",
+    "details": { "name": "test_categories_parent_id_is_integer", "error_type": "AssertionError", "message": "category 'parent_id' is null but OpenAPI contract requires integer", "endpoint": "GET /categories", "status": 200, "stack": "suite/test_categories.py:19: assert isinstance(cat['parent_id'], int)", "logs": "GET /categories -> some items have parent_id=null (with-bugs)" },
+    "rerun": { "passed": 0, "failed": 5, "errors": ["parent_id null != int"] },
+    "contract": { "endpoint": "GET /categories", "violations": ["item parent_id is null; schema requires integer (offline fixture; run live for real count)"] },
+    "service_health": { "target": "GET /categories", "reachable": true, "detail": "API responds" }
+  }
+}

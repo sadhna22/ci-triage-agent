@@ -1,0 +1,191 @@
+[
+  {
+    "id": "F-2026-0102",
+    "signature": "AssertionError: expected status 201 got 500 @ POST /products response missing required field id schema violation serializer error",
+    "verdict": "REAL_REGRESSION",
+    "root_cause": "Serializer dropped the id field after a model refactor",
+    "owner": "team-catalog",
+    "date": "2026-01-02",
+    "fix_ref": "PR #1601 restored id in ProductResource"
+  },
+  {
+    "id": "F-2026-0115",
+    "signature": "AssertionError: expected price 19.99 got 19.90 @ POST /carts checkout total rounding off by one cent",
+    "verdict": "REAL_REGRESSION",
+    "root_cause": "Rounding changed from HALF_UP to FLOOR in price calc",
+    "owner": "team-checkout",
+    "date": "2026-01-15",
+    "fix_ref": "PR #1640 reverted rounding mode"
+  },
+  {
+    "id": "F-2026-0128",
+    "signature": "AssertionError: expected 20 items got 19 @ GET /products?page=2 pagination off-by-one missing last item",
+    "verdict": "REAL_REGRESSION",
+    "root_cause": "Off-by-one in LIMIT/OFFSET pagination after query refactor",
+    "owner": "team-catalog",
+    "date": "2026-01-28",
+    "fix_ref": "PR #1655"
+  },
+  {
+    "id": "F-2026-0203",
+    "signature": "AssertionError: expected status 204 got 200 @ DELETE /products/{id} wrong success status code contract violation",
+    "verdict": "REAL_REGRESSION",
+    "root_cause": "Endpoint returned 200 instead of documented 204 No Content",
+    "owner": "team-catalog",
+    "date": "2026-02-03",
+    "fix_ref": "PR #1672"
+  },
+  {
+    "id": "F-2026-0210",
+    "signature": "AssertionError: expected field total to be number got string @ GET /invoices/{id} type mismatch schema violation",
+    "verdict": "REAL_REGRESSION",
+    "root_cause": "total serialized as string after currency-format change",
+    "owner": "team-billing",
+    "date": "2026-02-10",
+    "fix_ref": "PR #1690"
+  },
+  {
+    "id": "F-2026-0219",
+    "signature": "AssertionError: expected 200 got 422 @ POST /users validation rejects valid email regression in validator",
+    "verdict": "REAL_REGRESSION",
+    "root_cause": "Email validation regex tightened incorrectly",
+    "owner": "team-accounts",
+    "date": "2026-02-19",
+    "fix_ref": "PR #1705"
+  },
+  {
+    "id": "F-2026-0227",
+    "signature": "AssertionError: expected non-null token got null @ POST /users/login auth response missing access_token field",
+    "verdict": "REAL_REGRESSION",
+    "root_cause": "Login response omitted access_token after auth refactor",
+    "owner": "team-accounts",
+    "date": "2026-02-27",
+    "fix_ref": "PR #1718"
+  },
+  {
+    "id": "F-2026-0305",
+    "signature": "AssertionError: expected category name Tools got null @ GET /categories/{id} required field name missing schema violation",
+    "verdict": "REAL_REGRESSION",
+    "root_cause": "Eager-load dropped category name in response",
+    "owner": "team-catalog",
+    "date": "2026-03-05",
+    "fix_ref": "PR #1733"
+  },
+  {
+    "id": "F-2026-0312",
+    "signature": "ConnectionError: Failed to establish a new connection Name or service not known @ GET /products DNS resolution failed for api host",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "DNS could not resolve API host in CI network",
+    "owner": "team-platform",
+    "date": "2026-03-12",
+    "fix_ref": "added DNS readiness check; config change"
+  },
+  {
+    "id": "F-2026-0318",
+    "signature": "HTTPError: 502 Bad Gateway @ GET /products upstream proxy returned bad gateway service not ready",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Reverse proxy started before API container was healthy",
+    "owner": "team-platform",
+    "date": "2026-03-18",
+    "fix_ref": "depends_on healthcheck added to compose"
+  },
+  {
+    "id": "F-2026-0324",
+    "signature": "HTTPError: 401 Unauthorized @ GET /invoices missing or expired bearer token environment auth not configured",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "API_TOKEN env var not set in CI job",
+    "owner": "team-platform",
+    "date": "2026-03-24",
+    "fix_ref": "added API_TOKEN secret to CI; config change"
+  },
+  {
+    "id": "F-2026-0401",
+    "signature": "SSLError: certificate verify failed self signed certificate @ GET /products TLS handshake failed in staging env",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Staging used a self-signed cert not in the CI trust store",
+    "owner": "team-platform",
+    "date": "2026-04-01",
+    "fix_ref": "mounted CA bundle; config change"
+  },
+  {
+    "id": "F-2026-0409",
+    "signature": "OperationalError: too many connections @ POST /products database connection pool exhausted under parallel CI",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "DB max_connections too low for parallel CI workers",
+    "owner": "team-platform",
+    "date": "2026-04-09",
+    "fix_ref": "raised pool size; infra change"
+  },
+  {
+    "id": "F-2026-0416",
+    "signature": "ConnectionRefusedError: Connection refused @ GET /cart redis cache dependency unavailable in runner",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Redis sidecar not started before suite ran",
+    "owner": "team-platform",
+    "date": "2026-04-16",
+    "fix_ref": "gate suite on redis healthcheck"
+  },
+  {
+    "id": "F-2026-0421",
+    "signature": "KeyError: API_BASE_URL @ suite setup required environment variable not set configuration error",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Missing API_BASE_URL env var in CI matrix entry",
+    "owner": "team-platform",
+    "date": "2026-04-21",
+    "fix_ref": "added env to CI matrix; config change"
+  },
+  {
+    "id": "F-2026-0503-b",
+    "signature": "AssertionError: expected order count 5 got 4 @ GET /orders flaky depends on timezone date boundary off by one day",
+    "verdict": "FLAKY",
+    "root_cause": "TZD: Timezone-dependent — date boundary differs by runner timezone",
+    "owner": "team-orders",
+    "date": "2026-05-03",
+    "fix_ref": "pinned TZ=UTC in test env"
+  },
+  {
+    "id": "F-2026-0509",
+    "signature": "AssertionError: expected greeting Good morning got Good evening @ GET /banner flaky depends on time of day clock",
+    "verdict": "FLAKY",
+    "root_cause": "TD: Time-dependent — assertion tied to wall-clock time of day",
+    "owner": "team-web",
+    "date": "2026-05-09",
+    "fix_ref": "froze clock in test"
+  },
+  {
+    "id": "F-2026-0514",
+    "signature": "AssertionError: expected first result A got B @ GET /products?sort=relevance non-deterministic ordering from hash seed randomization",
+    "verdict": "FLAKY",
+    "root_cause": "NOD: Non-deterministic — tie-break order varies with PYTHONHASHSEED",
+    "owner": "team-search",
+    "date": "2026-05-14",
+    "fix_ref": "added stable secondary sort key"
+  },
+  {
+    "id": "F-2026-0520",
+    "signature": "TimeoutError: read timed out @ POST /payments flaky intermittent network jitter retry succeeded on rerun",
+    "verdict": "FLAKY",
+    "root_cause": "NOD: Non-deterministic — transient network latency to payment gateway",
+    "owner": "team-checkout",
+    "date": "2026-05-20",
+    "fix_ref": "added retry with backoff in client"
+  },
+  {
+    "id": "F-2026-0527",
+    "signature": "AssertionError: duplicate cart created @ POST /carts race condition double submit flaky under concurrency",
+    "verdict": "FLAKY",
+    "root_cause": "NOD: Non-deterministic — race between two concurrent cart creates",
+    "owner": "team-checkout",
+    "date": "2026-05-27",
+    "fix_ref": "idempotency key added"
+  },
+  {
+    "id": "F-2026-0601",
+    "signature": "AssertionError: expected 200 got 404 @ GET /products/{id}/image brittle test depends on a product seeded by an earlier test order dependent",
+    "verdict": "FLAKY",
+    "root_cause": "OD-Brit: Order-dependent brittle — relies on seed data from a prior test",
+    "owner": "team-catalog",
+    "date": "2026-06-01",
+    "fix_ref": "self-seed in fixture"
+  }
+]

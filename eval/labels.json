@@ -1,0 +1,15 @@
+{
+  "_comment": "Ground-truth verdicts for the eval batch (9 failures, 3 per class). REAL_REGRESSION labels map to Toolshop with-bugs Bug Hunting Guide defects; FLAKY/ENVIRONMENT known by construction. Must stay DISJOINT from rag/corpus (no shared answer rows). In replay mode the rule-based driver matches these by construction; the honest failure-mode story lives in openai mode, where the LLM's verdict is independent.",
+
+  "test_create_product_returns_201": "REAL_REGRESSION",
+  "test_checkout_total_rounding": "REAL_REGRESSION",
+  "test_invoice_total_type": "REAL_REGRESSION",
+
+  "test_related_products_eventually_populated": "FLAKY",
+  "test_search_sort_stable": "FLAKY",
+  "test_orders_count_by_date": "FLAKY",
+
+  "test_list_products_returns_200__env_break": "ENVIRONMENT",
+  "test_products_list_redis": "ENVIRONMENT",
+  "test_products_list_dns": "ENVIRONMENT"
+}

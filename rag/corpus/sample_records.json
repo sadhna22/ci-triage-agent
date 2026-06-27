@@ -1,0 +1,65 @@
+[
+  {
+    "id": "F-2026-0411",
+    "signature": "TimeoutError: condition not met within <num>s @ GET /products/<num>/related polling product index AssertionError expected <num> related got <num>",
+    "verdict": "FLAKY",
+    "root_cause": "Async wait — related-products index not yet committed when test polls",
+    "owner": "team-catalog",
+    "date": "2026-04-11",
+    "fix_ref": "quarantined; tracked in JIRA CAT-1822"
+  },
+  {
+    "id": "F-2026-0418",
+    "signature": "TimeoutError: condition not met within <num>s @ GET /products/<num>/related polling product index AssertionError expected <num> related got <num>",
+    "verdict": "FLAKY",
+    "root_cause": "Async wait — eventual consistency on the related-products read",
+    "owner": "team-catalog",
+    "date": "2026-04-18",
+    "fix_ref": "quarantined"
+  },
+  {
+    "id": "F-2026-0425",
+    "signature": "TimeoutError: condition not met within <num>s @ GET /products/<num>/related polling index AssertionError expected non-empty related list",
+    "verdict": "FLAKY",
+    "root_cause": "Async wait — search index lag under CI load",
+    "owner": "team-catalog",
+    "date": "2026-04-25",
+    "fix_ref": "added explicit wait-for-index helper"
+  },
+  {
+    "id": "F-2026-0503",
+    "signature": "TimeoutError: condition not met within <num>s @ GET /products/<num>/related AssertionError expected <num> got <num>",
+    "verdict": "FLAKY",
+    "root_cause": "Async wait — same async lag, recurred after infra change",
+    "owner": "team-catalog",
+    "date": "2026-05-03",
+    "fix_ref": "quarantined"
+  },
+  {
+    "id": "F-2026-0307",
+    "signature": "ConnectionRefusedError: [Errno <num>] Connection refused @ POST /carts base_url http://localhost:<port>",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Cart API container not up in CI runner; dependency unreachable",
+    "owner": "team-platform",
+    "date": "2026-03-07",
+    "fix_ref": "added healthcheck gate before suite; config change"
+  },
+  {
+    "id": "F-2026-0322",
+    "signature": "ConnectionRefusedError: Connection refused @ GET /products base_url http://localhost:<port> Max retries exceeded",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Wrong API base_url in CI env (pointed at dead port)",
+    "owner": "team-platform",
+    "date": "2026-03-22",
+    "fix_ref": "fixed CI env var API_BASE_URL"
+  },
+  {
+    "id": "F-2026-0402",
+    "signature": "AssertionError: expected status <num> got <num> @ POST /products response missing required field id schema violation",
+    "verdict": "REAL_REGRESSION",
+    "root_cause": "Decoy — superficially similar to async flaky but a true contract break",
+    "owner": "team-catalog",
+    "date": "2026-04-02",
+    "fix_ref": "PR #1790 reverted bad serializer change"
+  }
+]

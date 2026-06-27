@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Example JUnit report (what a CI run emits and the agent consumes).
+     Three failing tests = the three marquee scenarios. In a real run this is
+     produced by pytest with the junitxml option. -->
+<testsuites>
+  <testsuite name="toolshop-api" tests="3" failures="2" errors="1">
+    <testcase classname="suite.test_products" name="test_create_product_returns_201" time="0.412">
+      <failure message="assert 500 == 201">suite/test_products.py:24: AssertionError: assert 500 == 201 (response missing 'id')</failure>
+    </testcase>
+    <testcase classname="suite.test_products" name="test_related_products_eventually_populated" time="2.031">
+      <failure message="assert 0 &gt; 0">suite/test_products.py:36: TimeoutError: expected &gt;0 related, got 0</failure>
+    </testcase>
+    <testcase classname="suite.test_products" name="test_list_products_returns_200__env_break" time="0.103">
+      <error message="ConnectionError">requests.exceptions.ConnectionError: Connection refused (localhost:1)</error>
+    </testcase>
+  </testsuite>
+</testsuites>
