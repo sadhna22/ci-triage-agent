@@ -265,6 +265,10 @@ _LIVE_CONTRACT = {
         "type": "status", "method": "delete",
         "path": "/products/{first_product_id}", "expected": [401, 403],
     },
+    "test_invoices_require_auth": {
+        "type": "status", "method": "get",
+        "path": "/invoices", "expected": [401, 403],
+    },
 }
 _spec_cache: dict[str, Any] = {}
 

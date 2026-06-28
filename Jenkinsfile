@@ -62,7 +62,7 @@ pipeline {
       steps {
         sh '''
           . .venv/bin/activate
-          pytest suite/test_smoke.py -p no:randomly \
+          pytest suite/ -p no:randomly \
             --junitxml=eval/failures/live.xml || true
         '''
       }
