@@ -3,9 +3,189 @@
     "id": "CONFIRMED-FLAKY-test_intermittent_async_timing",
     "signature": "AssertionError AssertionError: intermittent timing failure on build <num> (flips across builds, no code change) assert (<num> % <num>) == <num> def test_intermittent_async_timing(): | build = int(os.environ.get(\"BUILD_NUMBER\", \"<num>\") or \"<num>\") | # Simulates an async/timing race that surfaces only on some runs.",
     "verdict": "FLAKY",
-    "root_cause": "NOD: flipped pass<->fail 3x across CI builds with no code link \u2014 outcome-confirmed flaky",
+    "root_cause": "NOD: flipped pass<->fail 4x across CI builds (excluding outage builds), no code link \u2014 outcome-confirmed flaky",
     "owner": "",
-    "fix_ref": "confirmed by CI history (builds 2..8)",
+    "fix_ref": "confirmed by CI history (builds 2..9)",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-307e51cc",
+    "signature": "Error AssertionError: brand list is empty assert (False) + where False = isinstance({'message': 'Something went wrong'}, list) base = 'http://localhost:<port>' | | def test_list_brands_nonempty(base):",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-52dd0708",
+    "signature": "Error AssertionError: brand missing fields: message assert {'id', 'name', 'slug'} <= {'a', 'e', 'g', 'm', 's'} Extra items in the left set: 'id' 'slug' 'name' base = 'http://localhost:<port>' | | def test_brands_have_required_fields(base):",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-75f91c6b",
+    "signature": "Error KeyError: <num> base = 'http://localhost:<port>' | | def test_brand_detail_returns_requested(base):",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-36f8389e",
+    "signature": "Error AttributeError: 'str' object has no attribute 'get' base = 'http://localhost:<port>' | | def test_categories_all_have_name(base):",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-a575d953",
+    "signature": "Error KeyError: <num> base = 'http://localhost:<port>' | | def test_category_detail_returns_requested(base):",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-d1347063",
+    "signature": "Error KeyError: <num> base = 'http://localhost:<port>' | | def test_category_detail_has_subcategories(base):",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-6deadf9e",
+    "signature": "Error AssertionError: favorites should be a list assert False + where False = isinstance({'message': 'Unauthorized'}, list) base = 'http://localhost:<port>', auth = {'Authorization': 'Bearer '} | | def test_favorites_list_for_user(base, auth):",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-35b4d3b4",
+    "signature": "Error KeyError: <num> base = 'http://localhost:<port>', auth = {'Authorization': 'Bearer '} | | def test_favorite_entry_has_product(base, auth):",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-338ec2c0",
+    "signature": "Error AssertionError: invoices response missing pagination 'data' assert 'data' in {'message': 'Something went wrong'} base = 'http://localhost:<port>', auth = {'Authorization': 'Bearer '} | | def test_invoices_list_for_user(base, auth):",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-896cb3db",
+    "signature": "Error KeyError: 'data' base = 'http://localhost:<port>', auth = {'Authorization': 'Bearer '} | | def test_invoice_has_required_fields(base, auth):",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-77674278",
+    "signature": "Error KeyError: 'data' def test_list_products_returns_data(): | body = _get(\"/products?page=<num>\").json() | > assert body[\"data\"], \"product list is empty\"",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-31c39bd4",
+    "signature": "Error KeyError: 'data' def test_product_detail_has_price(): | > pid = _first_product_id() |",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-736000d5",
+    "signature": "Error AssertionError: pagination metadata missing 'current_page' assert 'current_page' in {'message': 'Something went wrong'} def test_products_pagination_metadata(): | body = _get(\"/products?page=<num>\").json() | for field in (\"current_page\", \"per_page\", \"total\"):",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-762b92e1",
+    "signature": "Error KeyError: 'data' def test_search_returns_only_matches(): | > data = _get(\"/products/search?q=Pliers\").json()[\"data\"] | E KeyError: 'data'",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-5f3ea977",
+    "signature": "Error AssertionError: category list is empty assert (False) + where False = isinstance({'message': 'Something went wrong'}, list) def test_list_categories_returns_data(): | cats = _get(\"/categories\").json() | > assert isinstance(cats, list) and cats, \"category list is empty\"",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-9225bbc8",
+    "signature": "Error AttributeError: 'str' object has no attribute 'get' def test_category_tree_returns_roots(): | tree = _get(\"/categories/tree\").json() | > assert all(c.get(\"parent_id\") is None for c in tree), \"tree contains non-root nodes\"",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-5456311c",
+    "signature": "Error AssertionError: brand list is empty assert (False) + where False = isinstance({'message': 'Something went wrong'}, list) def test_list_brands_returns_data(): | brands = _get(\"/brands\").json() | > assert isinstance(brands, list) and brands, \"brand list is empty\"",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-376e1815",
+    "signature": "Error AssertionError: bad-password login returned <num>, expected <num> assert <num> == <num> + where <num> = <Response [<num>]>.status_code def test_login_rejects_bad_password(): | r = requests.post( | f\"{BASE}/users/login\",",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-a21b8242",
+    "signature": "Error assert (<num> == <num>) + where <num> = <Response [<num>]>.status_code base = 'http://localhost:<port>' | | def test_login_success_returns_token(base):",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
+    "provenance": "confirmed-outcome"
+  },
+  {
+    "id": "CONFIRMED-ENV-037aa3af",
+    "signature": "Error AssertionError: assert ('id' in {'message': 'Unauthorized'}) base = 'http://localhost:<port>', auth = {'Authorization': 'Bearer '} | | def test_me_returns_profile(base, auth):",
+    "verdict": "ENVIRONMENT",
+    "root_cause": "Recovered as a cohort (build 8->9, no targeted change) \u2014 outcome-confirmed environment",
+    "owner": "",
+    "fix_ref": "cohort recovery builds 8->9",
     "provenance": "confirmed-outcome"
   }
 ]

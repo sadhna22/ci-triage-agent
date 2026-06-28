@@ -34,16 +34,28 @@ CONFIRMED_PATH = os.path.join(
 
 
 def confirmed_flaky(last_n: int = 10) -> list[dict]:
-    """Tests that flip-flopped across recent builds -> outcome-confirmed flaky."""
+    """Tests that flip-flopped across recent builds -> outcome-confirmed flaky.
+
+    A failure that happened during a WIDESPREAD outage is environment, not
+    flakiness — counting it would mislabel every test that went down in the
+    outage as flaky. So we exclude widespread-build failures before counting flips.
+    """
     builds = jh.list_builds()[-last_n:]
+    widespread = {b for b in builds
+                  if jh.build_summary(b).get("blast_radius") == "widespread"}
+
     names: set[str] = set()
     for b in builds:
         names |= set(jh._build(b).keys())
 
     records = []
     for name in sorted(names):
-        h = jh.test_history(name, last_n)
-        if h["flip_count"] < 2:
+        tl = jh.test_history(name, last_n)["timeline"]
+        ran = [t for t in tl
+               if t["status"] in ("pass", "fail")
+               and not (t["status"] == "fail" and t["build"] in widespread)]
+        flips = sum(1 for a, b in zip(ran, ran[1:]) if a["status"] != b["status"])
+        if flips < 2:
             continue
         err = jh.test_error(name) or {}
         sig = signature_from_failure(
@@ -54,8 +66,8 @@ def confirmed_flaky(last_n: int = 10) -> list[dict]:
             "signature": sig or f"{name} intermittent failure",
             "verdict": "FLAKY",
             "root_cause": (
-                f"NOD: flipped pass<->fail {h['flip_count']}x across CI builds "
-                f"with no code link — outcome-confirmed flaky"
+                f"NOD: flipped pass<->fail {flips}x across CI builds (excluding "
+                f"outage builds), no code link — outcome-confirmed flaky"
             ),
             "owner": "",
             "fix_ref": f"confirmed by CI history (builds {builds[0]}..{builds[-1]})",
