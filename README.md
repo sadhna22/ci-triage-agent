@@ -82,26 +82,26 @@ Point the agent at it (already in this repo's `.env`): `API_BASE_URL=http://loca
 ```bash
 # 1) run the API smoke suite against the local buggy app -> one JUnit report
 pytest suite/ -p no:randomly --junitxml=eval/failures/live.xml
-#    31 checks across 7 resources: 28 pass, 3 fail on planted bugs
-#    (the SAME suite is 31/31 GREEN against the clean sprint5 baseline)
+#    39 checks across 8 resources: 28 pass, 11 fail on planted bugs
+#    (the SAME suite is GREEN against the clean sprint5 baseline)
 
 # 2) the agent triages every failure, hitting localhost:8091 live
 python cli.py eval/failures/live.xml
 ```
-The suite (`suite/`) is a realistic API sanity/regression suite across **products,
-categories, brands, users, invoices, favorites, contact**. It is **green on the
+The suite (`suite/`) is a realistic API regression suite. It is **green on the
 clean `sprint5` baseline** and red only on genuine defects — against
-`sprint5-with-bugs`, **three checks fail on genuinely planted defects** (confirmed
-by diffing `sprint5/API` vs `sprint5-with-bugs/API`, *and* by the clean baseline):
+`sprint5-with-bugs`, **11 checks fail on real planted defects** (found by diffing
+`sprint5/API` vs `sprint5-with-bugs/API` with parallel agents, then verified):
 
-| Failing check | Planted bug | Caught by |
+| Category | Failing checks | Example defect |
 |---|---|---|
-| `test_patch_product_supported` | `PATCH /products/{id}` → 405 (handler deleted) | `check_contract` (status) |
-| `test_delete_product_requires_auth` | unauth `DELETE` → 409 not 401 (`role:admin` middleware removed) | `check_contract` (status) |
-| `test_invoices_require_auth` | unauth `GET /invoices` → 200 (leaks billing data) | `check_contract` (status) |
+| **Security** | `test_login_rejects_sql_injection`, `test_me_hides_sensitive_fields`, `test_internal_logs_not_public` | login is a raw SQL string (auth bypass); `/users/me` leaks the password hash; `/logs/laravel.log` dumps the log |
+| **Access control** | `test_reports_require_auth`, `test_delete_brand_requires_auth`, `test_delete_product_requires_auth`, `test_invoices_require_auth` | `role:admin` / auth middleware removed → reports, deletes, invoices exposed |
+| **Validation** | `test_register_rejects_weak_password`, `test_register_does_not_leak_password_hint`, `test_contact_validates_email` | weak passwords accepted; email-enumeration hint leaked; email not validated |
+| **Behavioral** | `test_patch_product_supported` | `PATCH /products/{id}` handler deleted → 405 |
 
-The agent triages all three as `REAL_REGRESSION`, live. New failures need no
-wiring — `get_failure_details`/`rerun_test` derive everything from the report.
+The agent triages these as `REAL_REGRESSION`, live. New failures need no wiring —
+`get_failure_details`/`rerun_test` derive everything from the report.
 
 > Validating the suite against the clean baseline caught **false-positive tests**
 > (e.g. a "rentals hidden" check that flagged intended behavior) — those were
