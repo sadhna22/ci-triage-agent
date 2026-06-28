@@ -15,3 +15,6 @@ rag/.chroma/
 *.junit.xml
 eval/failures/live.xml
 triage-report.json
+
+# Local interview prep (do not publish)
+docs/INTERVIEW.md
