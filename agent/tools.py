@@ -91,6 +91,44 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "get_test_history",
+        "description": (
+            "Get this test's pass/fail timeline across recent CI builds, plus how "
+            "long it's been failing (age), whether it flip-flops (flaky signal), "
+            "when it last passed, and the build it started failing in. THE primary "
+            "signal for flaky (flip-flop across builds) vs. regression (freshly "
+            "green->red). Suite-specific evidence — prefer it over generic precedent."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"test_id": {"type": "string"}},
+            "required": ["test_id"],
+        },
+    },
+    {
+        "name": "get_build_summary",
+        "description": (
+            "Get this build's blast radius: how many tests failed and how many are "
+            "NEWLY failing vs the previous build. Many unrelated tests newly failing "
+            "=> ENVIRONMENT/infra problem, not a code regression. Call this to tell a "
+            "systemic environment failure apart from an isolated regression."
+        ),
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "get_blame",
+        "description": (
+            "For a freshly-failing test, get the commits in the build where it "
+            "started failing (failedSince) — the suspect change set + author. Use "
+            "only after concluding REAL_REGRESSION on an isolated failure."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"test_id": {"type": "string"}},
+            "required": ["test_id"],
+        },
+    },
+    {
         "name": "submit_triage",
         "description": (
             "Submit the final triage verdict. Call exactly once, last. This ends "
@@ -150,6 +188,7 @@ _LIVE_TEST = {
     "test_patch_product_supported": {"endpoint": "PATCH /products/{id}"},
     "test_products_default_includes_rentals": {"endpoint": "GET /products"},
     "test_delete_product_requires_auth": {"endpoint": "DELETE /products/{id}"},
+    "test_invoices_require_auth": {"endpoint": "GET /invoices"},
 }
 
 
@@ -405,6 +444,24 @@ def _parse_host_port(target: str) -> tuple[str | None, int]:
     return None, 0
 
 
+def tool_get_test_history(test_id: str) -> dict[str, Any]:
+    from agent import jenkins_history
+
+    return jenkins_history.test_history(test_id)
+
+
+def tool_get_build_summary() -> dict[str, Any]:
+    from agent import jenkins_history
+
+    return jenkins_history.build_summary()
+
+
+def tool_get_blame(test_id: str) -> dict[str, Any]:
+    from agent import jenkins_history
+
+    return jenkins_history.blame(test_id)
+
+
 def tool_submit_triage(**verdict: Any) -> dict[str, Any]:
     # Terminal tool: the loop detects this name and stops, returning `verdict`.
     return verdict
@@ -417,6 +474,9 @@ TOOL_IMPLS = {
     "search_past_failures": tool_search_past_failures,
     "check_contract": tool_check_contract,
     "check_service_health": tool_check_service_health,
+    "get_test_history": tool_get_test_history,
+    "get_build_summary": tool_get_build_summary,
+    "get_blame": tool_get_blame,
     "submit_triage": tool_submit_triage,
 }
 

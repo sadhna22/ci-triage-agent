@@ -85,54 +85,93 @@ def _replay_triage(test_id: str, trace: Trace | None) -> dict[str, Any]:
         details.get("endpoint"), details.get("stack"),
     )
 
-    rerun = _run_tool("rerun_test", {"test_id": test_id, "times": 5}, trace)
-    passed, failed = rerun.get("passed", 0), rerun.get("failed", 0)
-
-    # --- ENVIRONMENT: connection/network failure, not an assertion ---------
-    # Trigger on the error class, not a missing status (report-parsed failures
-    # have no status). Probe the real base URL when live, else the endpoint label.
+    # --- 1. ENVIRONMENT: connection/network failure (cheap, hard signal) ---
     if "connection" in err or "refused" in msg or "timed out" in msg:
         target = os.environ.get("API_BASE_URL") or details.get("endpoint", "")
         health = _run_tool("check_service_health", {"target": target}, trace)
         if not health.get("reachable", True):
-            matches = _run_tool("search_past_failures", {"query": query, "k": 3}, trace)["matches"]
-            owner = _top_owner(matches, "ENVIRONMENT") or "team-platform"
             return _verdict(
-                test_id, "ENVIRONMENT", 0.9, owner,
-                [f"{details['error_type']}: dependency unreachable",
-                 f"service health: {health.get('detail','')}",
-                 _precedent_note(matches, "ENVIRONMENT")], trace)
+                test_id, "ENVIRONMENT", 0.9, "team-platform",
+                [f"{details.get('error_type')}: dependency unreachable",
+                 f"service health: {health.get('detail','')}"], trace)
 
-    # --- FLAKY: mixed re-run -> needs precedent to disambiguate ------------
+    # --- 2. BUILD-HISTORY path: temporal, suite-specific evidence (primary) -
+    history = _run_tool("get_test_history", {"test_id": test_id}, trace)
+    if history.get("currently_failing"):
+        summary = _run_tool("get_build_summary", {}, trace)
+
+        # 2a. Large blast radius -> ENVIRONMENT prior (bias, NOT veto:
+        #     a concrete contract violation still escalates to regression).
+        if summary.get("blast_radius") == "widespread":
+            contract = _run_tool("check_contract", {"test_id": test_id}, trace)
+            if contract.get("violations"):
+                return _regression(test_id, details, contract, history, trace)
+            return _verdict(
+                test_id, "ENVIRONMENT", 0.85, "team-platform",
+                [summary.get("blast_radius_hint", ""),
+                 f"{summary.get('newly_failing')} of {summary.get('total_tests')} "
+                 f"tests newly failing this build"], trace)
+
+        # 2b. Flip-flop across builds -> FLAKY (strongest flaky evidence)
+        if history.get("flip_count", 0) >= 2:
+            return _verdict(
+                test_id, "FLAKY", 0.9, _guess_owner(details),
+                [history.get("history_hint", ""),
+                 f"flipped {history['flip_count']}x across recent builds (no code link)"],
+                trace)
+
+        # 2c. Isolated failure -> regression; contract confirms, blame names culprit
+        contract = _run_tool("check_contract", {"test_id": test_id}, trace)
+        return _regression(test_id, details, contract, history, trace)
+
+    # --- 3. COLD START (no CI history): rerun + RAG prior -------------------
+    rerun = _run_tool("rerun_test", {"test_id": test_id, "times": 5}, trace)
+    passed, failed = rerun.get("passed", 0), rerun.get("failed", 0)
+
     if passed > 0 and failed > 0:
         matches = _run_tool("search_past_failures", {"query": query, "k": 3}, trace)["matches"]
         if _has_strong(matches, "FLAKY"):
-            owner = _top_owner(matches, "FLAKY") or details.get("endpoint", "")
             return _verdict(
-                test_id, "FLAKY", 0.9, owner,
+                test_id, "FLAKY", 0.85, _top_owner(matches, "FLAKY") or _guess_owner(details),
                 [f"re-run mixed: {passed} pass / {failed} fail (non-deterministic)",
                  _precedent_note(matches, "FLAKY")], trace)
 
-    # --- REAL_REGRESSION: deterministic fail + contract violation ----------
     if failed > 0 and passed == 0:
         contract = _run_tool("check_contract", {"test_id": test_id}, trace)
         if contract.get("violations"):
             return _verdict(
                 test_id, "REAL_REGRESSION", 0.92, _guess_owner(details),
                 [f"re-run deterministic: {failed} fail / 0 pass",
-                 "contract violation: " + "; ".join(contract["violations"]),
-                 "no flaky precedent needed"], trace)
-        # deterministic but no contract break -> consult history
+                 "contract violation: " + "; ".join(contract["violations"])], trace)
         matches = _run_tool("search_past_failures", {"query": query, "k": 3}, trace)["matches"]
         verdict = _majority(matches) or "REAL_REGRESSION"
         return _verdict(test_id, verdict, 0.7, _top_owner(matches, verdict) or _guess_owner(details),
-                        [f"re-run deterministic: {failed} fail", _precedent_note(matches, verdict)], trace)
+                        [f"re-run deterministic: {failed} fail (no CI history)",
+                         _precedent_note(matches, verdict)], trace)
 
-    # --- fallback ----------------------------------------------------------
     matches = _run_tool("search_past_failures", {"query": query, "k": 3}, trace)["matches"]
     verdict = _majority(matches) or "FLAKY"
     return _verdict(test_id, verdict, 0.6, _top_owner(matches, verdict) or "unknown",
                     ["inconclusive local signal", _precedent_note(matches, verdict)], trace)
+
+
+def _regression(test_id, details, contract, history, trace) -> dict[str, Any]:
+    """Build a REAL_REGRESSION verdict, enriched with history + blame."""
+    evidence = []
+    if contract.get("violations"):
+        evidence.append("contract violation: " + "; ".join(contract["violations"]))
+    if history.get("history_hint"):
+        evidence.append("history: " + history["history_hint"])
+    blame = _run_tool("get_blame", {"test_id": test_id}, trace)
+    commits = blame.get("suspect_commits") or []
+    if commits:
+        c = commits[0]
+        evidence.append(
+            f"first failed in build #{blame.get('failed_since_build')}; "
+            f"suspect {c['sha']} by {c['author']} — {c['message'][:50]}"
+        )
+    conf = 0.92 if contract.get("violations") else 0.8
+    return _verdict(test_id, "REAL_REGRESSION", conf, _guess_owner(details), evidence, trace)
 
 
 def _verdict(test_id, verdict, confidence, owner, evidence, trace) -> dict[str, Any]:
