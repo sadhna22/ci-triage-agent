@@ -75,12 +75,13 @@ pipeline {
       steps {
         sh '''
           . .venv/bin/activate
-          python cli.py eval/failures/live.xml --out triage-report.json
+          python cli.py eval/failures/live.xml \
+            --out triage-report.json --html triage-report.html --notify
         '''
       }
       post {
         always {
-          archiveArtifacts artifacts: 'triage-report.json,eval/failures/live.xml',
+          archiveArtifacts artifacts: 'triage-report.json,triage-report.html,eval/failures/live.xml',
                            allowEmptyArchive: true
         }
       }

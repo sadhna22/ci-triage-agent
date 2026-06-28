@@ -17,11 +17,16 @@ cohort recovered) is a documented extension — it needs longer outcome tracking
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 
 from agent import jenkins_history as jh
 from rag.normalize import signature_from_failure
+
+
+def _hid(prefix: str, sig: str) -> str:
+    return f"{prefix}-{hashlib.md5(sig.encode()).hexdigest()[:8]}"
 
 CONFIRMED_PATH = os.path.join(
     os.path.dirname(os.path.dirname(__file__)), "rag", "corpus", "confirmed_records.json"
@@ -59,14 +64,73 @@ def confirmed_flaky(last_n: int = 10) -> list[dict]:
     return records
 
 
+def confirmed_environment(last_n: int = 10) -> list[dict]:
+    """Cohort recovery: many tests went red together then green together -> a real
+    fix can't un-break unrelated tests at once, so it was an environment outage.
+    Deduped by signature (a 20-test cohort collapses to a few error shapes)."""
+    builds = jh.list_builds()[-last_n:]
+    by_sig: dict[str, dict] = {}
+    for n_prev, n_cur in zip(builds, builds[1:]):
+        if jh.build_summary(n_prev).get("blast_radius") != "widespread":
+            continue
+        prev, cur = jh._build(n_prev), jh._build(n_cur)
+        recovered = [t for t in prev
+                     if prev[t]["status"] == "fail" and cur.get(t, {}).get("status") == "pass"]
+        for t in recovered:
+            err = jh.test_error(t) or {}
+            sig = signature_from_failure("Error", err.get("details", ""), None,
+                                         err.get("stack", "")) or f"{t} outage failure"
+            by_sig[sig] = {
+                "id": _hid("CONFIRMED-ENV", sig),
+                "signature": sig,
+                "verdict": "ENVIRONMENT",
+                "root_cause": f"Recovered as a cohort (build {n_prev}->{n_cur}, no targeted "
+                              f"change) — outcome-confirmed environment",
+                "owner": "", "fix_ref": f"cohort recovery builds {n_prev}->{n_cur}",
+                "provenance": "confirmed-outcome",
+            }
+    return list(by_sig.values())
+
+
+def confirmed_regression(last_n: int = 10) -> list[dict]:
+    """Isolated red->green where a commit landed in the recovery build -> a fix was
+    needed, so it was a real regression. NOTE: exact in a monorepo; with a split
+    app/test repo the commit signal is an assumption (track the app SHA to be precise)."""
+    builds = jh.list_builds()[-last_n:]
+    by_sig: dict[str, dict] = {}
+    for n_prev, n_cur in zip(builds, builds[1:]):
+        if jh.build_summary(n_prev).get("blast_radius") == "widespread":
+            continue  # widespread recovery is environment, not a targeted fix
+        if not jh._parse_changelog(n_cur):
+            continue  # recovered with no code change -> flaky/env, not a confirmed fix
+        prev, cur = jh._build(n_prev), jh._build(n_cur)
+        recovered = [t for t in prev
+                     if prev[t]["status"] == "fail" and cur.get(t, {}).get("status") == "pass"]
+        for t in recovered:
+            err = jh.test_error(t) or {}
+            sig = signature_from_failure("AssertionError", err.get("details", ""), None,
+                                         err.get("stack", "")) or f"{t} regression"
+            by_sig[sig] = {
+                "id": _hid("CONFIRMED-REG", sig),
+                "signature": sig,
+                "verdict": "REAL_REGRESSION",
+                "root_cause": f"Isolated red->green; a commit landed in build {n_cur} "
+                              f"(monorepo assumption) — outcome-confirmed regression",
+                "owner": "", "fix_ref": f"fixed in build {n_cur}",
+                "provenance": "confirmed-outcome",
+            }
+    return list(by_sig.values())
+
+
 def ingest(last_n: int = 10) -> list[dict]:
-    """Merge confirmed records into rag/corpus/confirmed_records.json (dedup by id)."""
+    """Merge ALL confirmed records into rag/corpus/confirmed_records.json (dedup by id)."""
     merged: dict[str, dict] = {}
     if os.path.exists(CONFIRMED_PATH):
         for r in json.load(open(CONFIRMED_PATH)):
             merged[r["id"]] = r
-    for r in confirmed_flaky(last_n):
-        merged[r["id"]] = r
+    for fn in (confirmed_flaky, confirmed_environment, confirmed_regression):
+        for r in fn(last_n):
+            merged[r["id"]] = r
     records = list(merged.values())
     with open(CONFIRMED_PATH, "w") as f:
         json.dump(records, f, indent=2)

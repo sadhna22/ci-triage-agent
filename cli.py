@@ -78,10 +78,15 @@ def triage_one(test_id: str) -> dict:
 
 
 def main() -> None:
+    import os
+
     ap = argparse.ArgumentParser(description="CI test-failure triage agent")
     ap.add_argument("report", nargs="?", help="JUnit XML report of failures")
     ap.add_argument("--test", help="triage a single test_id instead of a report")
     ap.add_argument("--out", help="write a JSON triage summary to this path (for CI)")
+    ap.add_argument("--html", help="write a static HTML triage report to this path")
+    ap.add_argument("--notify", action="store_true",
+                    help="email a digest per recipient via SMTP (MailCatcher)")
     args = ap.parse_args()
 
     results = []
@@ -96,6 +101,24 @@ def main() -> None:
     else:
         ap.error("provide a JUnit report path or --test <test_id>")
 
+    build = os.environ.get("BUILD_NUMBER")
+
+    # Enrich ENVIRONMENT verdicts with a sub-bucket (from the failure signature).
+    from agent.routing import classify_env_category
+    from agent.tools import tool_get_failure_details
+    for r in results:
+        if r["verdict"] == "ENVIRONMENT":
+            d = tool_get_failure_details(r["test_id"])
+            r["env_category"] = classify_env_category(d.get("error_type", ""), d.get("message", ""))
+
+    # Route + notify (stamps notified_team/email used by the report).
+    if args.notify:
+        from agent.notify import send_digests
+        sent = send_digests(results, build=build)
+        for s in sent:
+            mark = "✓" if s.get("sent") else f"✗ ({s.get('error','')})"
+            console.print(f"[dim]notified {s['team']} <{s['email']}>: {s['count']} item(s) {mark}[/dim]")
+
     if args.out:
         import json
         from collections import Counter
@@ -108,6 +131,11 @@ def main() -> None:
         with open(args.out, "w") as f:
             json.dump(summary, f, indent=2)
         console.print(f"[dim]triage summary written to {args.out}[/dim]")
+
+    if args.html:
+        from agent.htmlreport import render
+        render(results, args.html, build=build)
+        console.print(f"[dim]HTML report written to {args.html}[/dim]")
 
 
 if __name__ == "__main__":
