@@ -346,9 +346,20 @@ def _get_spec(base: str) -> dict[str, Any]:
 
 
 def _check_contract_live(base: str, m: dict) -> dict[str, Any]:
-    if m.get("type") == "status":
-        return _check_contract_status(base, m)
-    return _check_contract_schema(base, m)
+    # Robust to a failing/unreachable API (e.g. DB down -> 500/non-JSON): never
+    # crash the triage; report that the contract couldn't be checked instead.
+    try:
+        if m.get("type") == "status":
+            return _check_contract_status(base, m)
+        return _check_contract_schema(base, m)
+    except Exception as e:
+        return {
+            "endpoint": m.get("path"),
+            "source": f"LIVE API ({base})",
+            "violations": [],
+            "note": f"could not check contract ({type(e).__name__}) — "
+                    f"API erroring or unreachable (service may be down)",
+        }
 
 
 def _check_contract_schema(base: str, m: dict) -> dict[str, Any]:
@@ -388,6 +399,18 @@ def _check_contract_status(base: str, m: dict) -> dict[str, Any]:
         pid = requests.get(base + "/products?page=1", timeout=15).json()["data"][0]["id"]
         path = path.replace("{first_product_id}", str(pid))
     r = requests.request(m["method"], base + path, json=m.get("body"), timeout=15)
+    if r.status_code >= 500:
+        # A server error is an outage signal, not a contract breach — don't let it
+        # masquerade as a regression during a widespread environment failure.
+        return {
+            "endpoint": f"{m['method'].upper()} {m['path']}",
+            "source": f"LIVE API ({base})",
+            "status": r.status_code,
+            "checked": 1,
+            "violation_count": 0,
+            "violations": [],
+            "note": f"{r.status_code} server error — likely environment, not a contract breach",
+        }
     ok = r.status_code in m["expected"]
     violations = [] if ok else [
         f"{m['method'].upper()} {path} returned {r.status_code}; "

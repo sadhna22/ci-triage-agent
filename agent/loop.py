@@ -60,7 +60,13 @@ def triage(test_id: str, *, trace: Trace | None = None) -> dict[str, Any]:
 # Shared helpers
 # --------------------------------------------------------------------------
 def _run_tool(name: str, args: dict, trace: Trace | None) -> Any:
-    out = TOOL_IMPLS[name](**args)
+    # A failing tool must not crash the whole triage — return an error result so
+    # the driver/LLM can fall back to other signals (important when the SUT is
+    # down and live tools error).
+    try:
+        out = TOOL_IMPLS[name](**args)
+    except Exception as e:
+        out = {"error": f"{type(e).__name__}: {e}"}
     if trace:
         trace(name, args, out)
     return out
