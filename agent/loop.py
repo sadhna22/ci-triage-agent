@@ -149,11 +149,18 @@ def _replay_triage(test_id: str, trace: Trace | None) -> dict[str, Any]:
                 test_id, "REAL_REGRESSION", 0.92, _guess_owner(details),
                 [f"re-run deterministic: {failed} fail / 0 pass",
                  "contract violation: " + "; ".join(contract["violations"])], trace)
+        # Deterministic rules out FLAKY (it didn't flip). It can still be
+        # ENVIRONMENT, but only with strong precedent; otherwise it's a regression.
+        # Generic precedent must NOT flip a reproducible failure to flaky.
         matches = _run_tool("search_past_failures", {"query": query, "k": 3}, trace)["matches"]
-        verdict = _majority(matches) or "REAL_REGRESSION"
-        return _verdict(test_id, verdict, 0.7, _top_owner(matches, verdict) or _guess_owner(details),
-                        [f"re-run deterministic: {failed} fail (no CI history)",
-                         _precedent_note(matches, verdict)], trace)
+        if _has_strong(matches, "ENVIRONMENT"):
+            return _verdict(
+                test_id, "ENVIRONMENT", 0.75, _top_owner(matches, "ENVIRONMENT") or "team-platform",
+                [f"re-run deterministic: {failed} fail", _precedent_note(matches, "ENVIRONMENT")], trace)
+        return _verdict(
+            test_id, "REAL_REGRESSION", 0.78, _guess_owner(details),
+            [f"re-run deterministic: {failed} fail / 0 pass (reproducible)",
+             "classified by determinism (no flip, reachable, no contract mapping)"], trace)
 
     matches = _run_tool("search_past_failures", {"query": query, "k": 3}, trace)["matches"]
     verdict = _majority(matches) or "FLAKY"

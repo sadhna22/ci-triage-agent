@@ -79,29 +79,34 @@ def confirmed_flaky(last_n: int = 10) -> list[dict]:
 def confirmed_environment(last_n: int = 10) -> list[dict]:
     """Cohort recovery: many tests went red together then green together -> a real
     fix can't un-break unrelated tests at once, so it was an environment outage.
-    Deduped by signature (a 20-test cohort collapses to a few error shapes)."""
+
+    An outage is ONE event -> ONE record (not one per recovered test). Minting a
+    record per test would flood the corpus and bias retrieval toward ENVIRONMENT.
+    """
     builds = jh.list_builds()[-last_n:]
-    by_sig: dict[str, dict] = {}
+    records = []
     for n_prev, n_cur in zip(builds, builds[1:]):
         if jh.build_summary(n_prev).get("blast_radius") != "widespread":
             continue
         prev, cur = jh._build(n_prev), jh._build(n_cur)
         recovered = [t for t in prev
                      if prev[t]["status"] == "fail" and cur.get(t, {}).get("status") == "pass"]
-        for t in recovered:
-            err = jh.test_error(t) or {}
-            sig = signature_from_failure("Error", err.get("details", ""), None,
-                                         err.get("stack", "")) or f"{t} outage failure"
-            by_sig[sig] = {
-                "id": _hid("CONFIRMED-ENV", sig),
-                "signature": sig,
-                "verdict": "ENVIRONMENT",
-                "root_cause": f"Recovered as a cohort (build {n_prev}->{n_cur}, no targeted "
-                              f"change) — outcome-confirmed environment",
-                "owner": "", "fix_ref": f"cohort recovery builds {n_prev}->{n_cur}",
-                "provenance": "confirmed-outcome",
-            }
-    return list(by_sig.values())
+        if not recovered:
+            continue
+        sample = jh.test_error(recovered[0]) or {}
+        hint = signature_from_failure("Error", sample.get("details", ""), None, "")[:80]
+        records.append({
+            "id": _hid("CONFIRMED-ENV", f"outage-{n_prev}-{n_cur}"),
+            "signature": f"widespread cohort failure recovered without a code change "
+                         f"({len(recovered)} tests); e.g. {hint}",
+            "verdict": "ENVIRONMENT",
+            "root_cause": f"{len(recovered)} tests failed together (build {n_prev}) and "
+                          f"recovered together (build {n_cur}) with no targeted change — "
+                          f"outcome-confirmed environment outage",
+            "owner": "", "fix_ref": f"cohort recovery builds {n_prev}->{n_cur}",
+            "provenance": "confirmed-outcome",
+        })
+    return records
 
 
 def confirmed_regression(last_n: int = 10) -> list[dict]:
