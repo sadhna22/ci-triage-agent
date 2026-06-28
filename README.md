@@ -82,26 +82,31 @@ Point the agent at it (already in this repo's `.env`): `API_BASE_URL=http://loca
 ```bash
 # 1) run the API smoke suite against the local buggy app -> one JUnit report
 pytest suite/ -p no:randomly --junitxml=eval/failures/live.xml
-#    30 checks across 7 resources: 25 pass, 5 fail on planted bugs
+#    31 checks across 7 resources: 28 pass, 3 fail on planted bugs
+#    (the SAME suite is 31/31 GREEN against the clean sprint5 baseline)
 
 # 2) the agent triages every failure, hitting localhost:8091 live
 python cli.py eval/failures/live.xml
 ```
 The suite (`suite/`) is a realistic API sanity/regression suite across **products,
-categories, brands, users, invoices, favorites, contact**. Against
-`sprint5-with-bugs`, **five checks fail on genuinely planted defects** (confirmed
-by diffing `sprint5/API` vs `sprint5-with-bugs/API`):
+categories, brands, users, invoices, favorites, contact**. It is **green on the
+clean `sprint5` baseline** and red only on genuine defects — against
+`sprint5-with-bugs`, **three checks fail on genuinely planted defects** (confirmed
+by diffing `sprint5/API` vs `sprint5-with-bugs/API`, *and* by the clean baseline):
 
 | Failing check | Planted bug | Caught by |
 |---|---|---|
-| `test_categories_parent_id_is_integer` | `GET /categories` returns `parent_id: null` vs string-typed spec | `check_contract` (schema) |
 | `test_patch_product_supported` | `PATCH /products/{id}` → 405 (handler deleted) | `check_contract` (status) |
 | `test_delete_product_requires_auth` | unauth `DELETE` → 409 not 401 (`role:admin` middleware removed) | `check_contract` (status) |
 | `test_invoices_require_auth` | unauth `GET /invoices` → 200 (leaks billing data) | `check_contract` (status) |
-| `test_products_default_includes_rentals` | default `/products` hides rentals (`is_rental` filter) | re-run + report |
 
-The agent triages all five as `REAL_REGRESSION`, live. New failures need no
+The agent triages all three as `REAL_REGRESSION`, live. New failures need no
 wiring — `get_failure_details`/`rerun_test` derive everything from the report.
+
+> Validating the suite against the clean baseline caught **false-positive tests**
+> (e.g. a "rentals hidden" check that flagged intended behavior) — those were
+> fixed so a *correct* app is fully green. A test that fails on a correct app is a
+> broken test.
 
 To run against the **hosted** with-bugs instead of docker, set
 `API_BASE_URL=https://api-with-bugs.practicesoftwaretesting.com`.

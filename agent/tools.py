@@ -184,9 +184,7 @@ _fixtures: dict[str, Any] | None = None
 # Optional endpoint labels for nicer traces. The pytest node is derived from the
 # report's classname, so tests don't need to be registered here to be triaged.
 _LIVE_TEST = {
-    "test_categories_parent_id_is_integer": {"endpoint": "GET /categories"},
     "test_patch_product_supported": {"endpoint": "PATCH /products/{id}"},
-    "test_products_default_includes_rentals": {"endpoint": "GET /products"},
     "test_delete_product_requires_auth": {"endpoint": "DELETE /products/{id}"},
     "test_invoices_require_auth": {"endpoint": "GET /invoices"},
 }
@@ -289,11 +287,6 @@ def tool_search_past_failures(query: str, k: int = 5) -> dict[str, Any]:
 # Maps a test_id to a live endpoint + the OpenAPI component schema to validate
 # its response items against. Used only when API_BASE_URL is set.
 _LIVE_CONTRACT = {
-    # "schema": validate the response items against an OpenAPI component schema.
-    "test_categories_parent_id_is_integer": {
-        "type": "schema", "method": "get", "path": "/categories",
-        "schema": "CategoryResponse", "array": True,
-    },
     # "status": issue the request and check the status code against the contract.
     "test_patch_product_supported": {
         "type": "status", "method": "patch",
