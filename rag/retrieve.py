@@ -70,12 +70,21 @@ def _search_fallback(query: str, k: int):
     ]
 
 
+# Grounded, outcome/human-confirmed records out-rank generic priors at similar
+# similarity (the feedback loop's payoff).
+_PROVENANCE_BOOST = {"confirmed-outcome": 0.08, "confirmed-human": 0.08}
+
+
 def _row(id_, signature, sim, meta) -> dict:
+    sim = float(sim)
+    prov = meta.get("provenance", "synthetic")
     return {
         "id": id_,
         "signature": signature,
-        "similarity": round(float(sim), 3),
-        "strong_precedent": float(sim) >= _threshold(),
+        "similarity": round(sim, 3),
+        "effective_score": round(sim + _PROVENANCE_BOOST.get(prov, 0.0), 3),
+        "provenance": prov,
+        "strong_precedent": sim >= _threshold(),
         "verdict": meta.get("verdict", ""),
         "root_cause": meta.get("root_cause", ""),
         "owner": meta.get("owner", ""),
@@ -85,7 +94,10 @@ def _row(id_, signature, sim, meta) -> dict:
 
 
 def search(query: str, k: int = 5) -> list[dict]:
-    """Return up to k past failures most similar to `query`, with similarity."""
+    """Return up to k past failures, re-ranked so confirmed provenance wins ties."""
     q = normalize(query)
-    via_chroma = _try_chroma(q, k)
-    return via_chroma if via_chroma is not None else _search_fallback(q, k)
+    pool = _try_chroma(q, k * 2)
+    if pool is None:
+        pool = _search_fallback(q, k * 2)
+    pool.sort(key=lambda r: r["effective_score"], reverse=True)
+    return pool[:k]

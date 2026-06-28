@@ -1,0 +1,11 @@
+[
+  {
+    "id": "CONFIRMED-FLAKY-test_intermittent_async_timing",
+    "signature": "AssertionError AssertionError: intermittent timing failure on build <num> (flips across builds, no code change) assert (<num> % <num>) == <num> def test_intermittent_async_timing(): | build = int(os.environ.get(\"BUILD_NUMBER\", \"<num>\") or \"<num>\") | # Simulates an async/timing race that surfaces only on some runs.",
+    "verdict": "FLAKY",
+    "root_cause": "NOD: flipped pass<->fail 3x across CI builds with no code link \u2014 outcome-confirmed flaky",
+    "owner": "",
+    "fix_ref": "confirmed by CI history (builds 2..8)",
+    "provenance": "confirmed-outcome"
+  }
+]

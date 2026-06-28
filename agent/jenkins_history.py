@@ -112,6 +112,21 @@ def _hint(flips, age, last_green, failing) -> str:
     return f"failing for {age} consecutive builds -> chronic"
 
 
+def test_error(test_id: str) -> dict | None:
+    """Most recent failure's error text for a test (for building a signature)."""
+    for b in reversed(list_builds()):
+        path = os.path.join(_builds_dir(), str(b), "junitResult.xml")
+        for case in ET.parse(path).getroot().findall(".//case"):
+            if case.findtext("testName") == test_id and case.find("errorStackTrace") is not None:
+                return {
+                    "build": b,
+                    "details": case.findtext("errorDetails") or "",
+                    "stack": case.findtext("errorStackTrace") or "",
+                    "classname": case.findtext("className") or "",
+                }
+    return None
+
+
 def build_summary(n: int | None = None) -> dict:
     """Build-level blast radius: how much of the suite newly broke this build."""
     n = n or latest_build()

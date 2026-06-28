@@ -55,6 +55,10 @@ def build() -> int:
                 "owner": r.get("owner", ""),
                 "date": r.get("date", ""),
                 "fix_ref": r.get("fix_ref", ""),
+                # Provenance: confirmed-outcome > confirmed-human > idoft > synthetic.
+                # Grounded, suite-specific records out-rank generic priors.
+                "provenance": r.get("provenance")
+                or ("idoft" if "_source" in r else "synthetic"),
             }
             for r in records
         ],
